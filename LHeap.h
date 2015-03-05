@@ -1,7 +1,7 @@
 #ifndef LHEAP_H
 #define LHEAP_H
 
-#include "TreeNode.h"
+#include "HeapNode.h"
 #include <iostream>
 #include <cstdlib>
 #include <string>
@@ -16,6 +16,15 @@ public :
 	}
 };
 
+template<typename T1>
+int dCmp(const T1 &a, const T1 &b) {	// default compare function
+	if (a > b)
+		return 1;
+	if (a < b)
+		return -1;
+	return 0;
+}
+
 template<class T1, class T2 = NULLT>
 class LHeap {
 
@@ -23,22 +32,22 @@ private :
 	Node<T1, T2> *root;
 	int size;
 	int(*cmp)(const T1 &a, const T1 &b);
-	bool allowRpt; // allow repetition of id in a heap
 
 	int calcSize(const Node<T1, T2> * const node) const;
+	int calcNpl(const Node<T1, T2> * const node) const;
+	Node<T1, T2>* merge(Node<T1, T2> *H1, Node<T1, T2> *H2);
 public :
 	// constructors and destructor
-	LHeap(bool rpt = true);
-	LHeap(int(*compare)(const T1 &a, const T1 &b), bool rpt = true);
-	LHeap(const T1 &rootID, const T2 * const rootRcd = NULL, int(*compare)(const T1 &a, const T1 &b) = dCmp, bool rpt = true);
-	LHeap(const T1 &rootID, const T2 &rootRcd, int(*compare)(const T1 &a, const T1 &b) = dCmp, bool rpt = true);
+	LHeap();
+	LHeap(int(*compare)(const T1 &a, const T1 &b));
+	LHeap(const T1 &rootID, const T2 * const rootRcd = NULL, int(*compare)(const T1 &a, const T1 &b) = dCmp);
+	LHeap(const T1 &rootID, const T2 &rootRcd, int(*compare)(const T1 &a, const T1 &b) = dCmp);
 	LHeap(const LHeap<T1, T2> &Old);
 	~LHeap();
 	bool setCmp(int(*compare)(const T1 &a, const T1 &b));
-	bool setRpt(bool rpt);
 
 	Node<T1, T2> * Top();
-	bool Pop();
+	Node<T1, T2> * Pop();
 	bool empty();
 	bool Insert(const T1 &id, const T2 * rcd = NULL);
 
@@ -58,10 +67,9 @@ public :
 //							KC 2015-02-10
 ////////////////////////////////////////////////////////////////////////////////
 template<class T1, class T2>
-LHeap<T1, T2>::LHeap(bool rpt) {
+LHeap<T1, T2>::LHeap() {
 	root = NULL;
 	size = 0;
-	allowRpt = rpt;
 	cmp = dCmp;
 }
 
@@ -77,10 +85,9 @@ LHeap<T1, T2>::LHeap(bool rpt) {
 //							KC 2015-02-10
 ////////////////////////////////////////////////////////////////////////////////
 template<class T1, class T2>
-LHeap<T1, T2>::LHeap(int(*compare)(const T1 &a, const T1 &b), bool rpt) {
+LHeap<T1, T2>::LHeap(int(*compare)(const T1 &a, const T1 &b)) {
 	root = NULL;
 	size = 0;
-	allowRpt = rpt;
 	cmp = compare;
 }
 
@@ -98,10 +105,9 @@ LHeap<T1, T2>::LHeap(int(*compare)(const T1 &a, const T1 &b), bool rpt) {
 //							KC 2015-02-10
 ////////////////////////////////////////////////////////////////////////////////
 template<class T1, class T2>
-LHeap<T1, T2>::LHeap(const T1 &rootID, const T2 * const rootRcd, int(*compare)(const T1 &a, const T1 &b), bool rpt) {
+LHeap<T1, T2>::LHeap(const T1 &rootID, const T2 * const rootRcd, int(*compare)(const T1 &a, const T1 &b)) {
 	root = new Node<T1, T2>(rootID, rootRcd);
 	size = 1;
-	allowRpt = rpt;
 	cmp = compare;
 }
 
@@ -119,10 +125,9 @@ LHeap<T1, T2>::LHeap(const T1 &rootID, const T2 * const rootRcd, int(*compare)(c
 //							KC 2015-02-10
 ////////////////////////////////////////////////////////////////////////////////
 template<class T1, class T2>
-LHeap<T1, T2>::LHeap(const T1 &rootID, const T2 &rootRcd, int(*compare)(const T1 &a, const T1 &b), bool rpt) {
+LHeap<T1, T2>::LHeap(const T1 &rootID, const T2 &rootRcd, int(*compare)(const T1 &a, const T1 &b)) {
 	root = new Node<T1, T2>(rootID, rootRcd);
 	size = 1;
-	allowRpt = rpt;
 	cmp = compare;
 }
 
@@ -141,9 +146,10 @@ template<class T1, class T2>
 LHeap<T1, T2>::LHeap(const LHeap<T1, T2> &Old) {
 	size = Old.size;
 	cmp = Old.cmp;
-	allowRpt = Old.allowRpt;
-	root = new Node<T1, T2>;
-	root->copy(Old.root);
+	if (Old.root != NULL) {
+		root = new Node<T1, T2>;
+		root->copy(Old.root);
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -186,6 +192,53 @@ int LHeap<T1, T2>::calcSize(const Node<T1, T2> * const node) const {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+//        NAME: calcNpl
+// DESCRIPTION: To get the Npl of a Node or NULL.
+//   ARGUMENTS: const Node<T1, T2> * const node - the node of which the Npl we want to find out
+// USES GLOBAL: none
+// MODIFIES GL: none
+//     RETURNS: int
+//      AUTHOR: Kingston Chan
+// AUTHOR/DATE: KC 2015-03-05
+//							KC 2015-03-05
+////////////////////////////////////////////////////////////////////////////////
+template<class T1, class T2>
+int LHeap<T1, T2>::calcNpl(const Node<T1, T2> * const node) const {
+	if (node == NULL)
+		return -1;
+	return node->getNpl();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//        NAME: merge
+// DESCRIPTION: To merge two heaps.
+//   ARGUMENTS: const Node<T1, T2> * const node - the root the of another heap
+// USES GLOBAL: none
+// MODIFIES GL: none
+//     RETURNS: Node<T1, T2>*
+//      AUTHOR: Kingston Chan
+// AUTHOR/DATE: KC 2015-03-05
+//							KC 2015-03-05
+////////////////////////////////////////////////////////////////////////////////
+template<class T1, class T2>
+Node<T1, T2>* LHeap<T1, T2>::merge(Node<T1, T2> *H1, Node<T1, T2> *H2) {
+	Node<T1, T2> *head = NULL, *Tmp = NULL;
+	if (H1 == NULL)
+		return H2;
+	if (H2 == NULL)
+		return H1;
+	head = cmp(H1->getID(), H2->getID()) > 0 ? H2 : H1;
+	head->AddRgt(merge(head->getRgt(), cmp(H1->getID(), H2->getID()) > 0 ? H1 : H2));
+	if (calcNpl(head->getLft()) < calcNpl(head->getRgt())) {	// swap if left-npl is smaller than right-npl
+		Tmp = head->getRgt();
+		head->AddRgt(head->getLft());
+		head->AddLft(Tmp);
+	}
+	head->setNpl(MIN(calcNpl(head->getLft()), calcNpl(head->getRgt())) + 1);	// reset Npl
+	return head;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 //        NAME: setCmp
 // DESCRIPTION: To assign the compare function to the member function pointer.
 //   ARGUMENTS: int(*compare)(const T1 &a, const T1 &b) - the compare function
@@ -203,25 +256,26 @@ bool LHeap<T1, T2>::setCmp(int(*compare)(const T1 &a, const T1 &b)) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-//        NAME: setRpt
-// DESCRIPTION: To set the allowance of repetition in a heap.
-//   ARGUMENTS: bool rpt - the value of allowRpt
+//        NAME: Pop
+// DESCRIPTION: To get the top element in a heap and delete it.
+//   ARGUMENTS: none
 // USES GLOBAL: none
-// MODIFIES GL: allowRpt
-//     RETURNS: bool
+// MODIFIES GL: none
+//     RETURNS: Node<T1, T2>*
 //      AUTHOR: Kingston Chan
-// AUTHOR/DATE: KC 2015-03-03
-//							KC 2015-03-03
+// AUTHOR/DATE: KC 2015-03-05
+//							KC 2015-03-05
 ////////////////////////////////////////////////////////////////////////////////
-bool LHeap<T1, T2>::setRpt(bool rpt) {
-	allowRpt = rpt;
-	return true;
-}
-
-
 template<class T1, class T2>
-bool LHeap<T1, T2>::Pop() {
-	
+Node<T1, T2> * LHeap<T1, T2>::Pop() {
+	Node<T1, T2> * tmp;
+	if (root == NULL) {
+		throw LHeapERR("the heap is already empty");
+		return NULL;
+	}
+	tmp = root;
+	root = merge(root->getLft(), root->getRgt());
+	return tmp;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -230,13 +284,13 @@ bool LHeap<T1, T2>::Pop() {
 //   ARGUMENTS: none
 // USES GLOBAL: none
 // MODIFIES GL: none
-//     RETURNS: Node<T1, T2>
+//     RETURNS: Node<T1, T2>*
 //      AUTHOR: Kingston Chan
 // AUTHOR/DATE: KC 2015-03-03
 //							KC 2015-03-03
 ////////////////////////////////////////////////////////////////////////////////
 template<class T1, class T2>
-Node<T1, T2> LHeap<T1, T2>::Top() {
+Node<T1, T2> * LHeap<T1, T2>::Top() {
 	return root;
 }
 
@@ -258,6 +312,31 @@ bool LHeap<T1, T2>::empty() {
 	delete root;
 	root = NULL;
 	size = 0;
+	return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//        NAME: Insert
+// DESCRIPTION: To insert a node into the heap.
+//   ARGUMENTS: const T1 &id - the ID of the new node
+//				const T2 * rcd - the Rcd of the new node
+// USES GLOBAL: none
+// MODIFIES GL: root, size
+//     RETURNS: bool
+//      AUTHOR: Kingston Chan
+// AUTHOR/DATE: KC 2015-02-10
+//							KC 2015-02-10
+////////////////////////////////////////////////////////////////////////////////
+template<class T1, class T2>
+bool LHeap<T1, T2>::Insert(const T1 &id, const T2 * rcd) {
+	Node<T1, T2> *H2 = NULL;
+	H2 = new Node<T1, T2>(id, rcd);
+	if (H2 == NULL) {
+		throw LHeapERR("Out of space");
+		return false;
+	}
+	root = merge(root, H2);
+	++size;
 	return true;
 }
 
