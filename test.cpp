@@ -1,4 +1,6 @@
 #include "LHeap.h"
+#include <iostream>
+#include <cstdlib>
 using namespace std;
 class A {
 public :
@@ -41,32 +43,14 @@ int main() {
 	{ // LHeap(int(*compare)(const T1 &a, const T1 &b));
 		cout << "========================================" << endl;
 		LHeap<A> LH1(cmp);
-		for (int i = 1; i < 8; i++)
+		for (int i = 1; i < 8; i++) {
 			LH1.Insert(i);
-		LH1.print();
-		cout << "----------------------------------------" << endl;
-		LH1.empty();
-		LH1.Insert(10);
-		LH1.Insert(85);
-		LH1.Insert(15);
-		LH1.Insert(70);
-		LH1.Insert(20);
-		LH1.Insert(60);
-		LH1.Insert(30);
-		LH1.Insert(50);
-		LH1.Insert(65);
-		LH1.Insert(80);
-		LH1.Insert(90);
-		LH1.Insert(40);
-		LH1.Insert(5);
-		LH1.Insert(55);
-		//LH1.Insert(64);
-		//LH1.Insert(66);
-		//LH1.Insert(67);
-		LH1.print();
+			LH1.print();
+			cout << "----------------------------------------" << endl;
+		}
 	}
 	{ // LHeap(const T1 &rootID, const T2 * const rootRcd = NULL, int(*compare)(const T1 &a, const T1 &b) = dCmp);
-	  	cout << "========================================" << endl;
+		cout << "========================================" << endl;
 		int a = 1, b = 2;
 		LHeap<A, int> LH1(1, &a, cmp);
 		LHeap<A, int> LH3(3, NULL, cmp);
@@ -74,9 +58,54 @@ int main() {
 		LHeap<A, int> LH5(5);
 	}
 	{ // LHeap(const T1 &rootID, const T2 &rootRcd, int(*compare)(const T1 &a, const T1 &b) = dCmp);
-	  	cout << "========================================" << endl;
+		cout << "========================================" << endl;
 		LHeap<A, int> LH1(1, 2, cmp);
 		LHeap<A, int> LH2(2, 3);
 	}
+	{	// test the merge function, with root set as public member
+		Node<A> Na1(3);		Na1.setNpl(1);
+		Node<A> Na2(10);	Na2.setNpl(1);
+		Node<A> Na3(8);		Na3.setNpl(0);
+		Node<A> Na4(21);	Na4.setNpl(0);
+		Node<A> Na5(14);	Na5.setNpl(0);
+		Node<A> Na6(17);	Na6.setNpl(0);
+		Node<A> Na7(23);	Na7.setNpl(0);
+		Node<A> Na8(26);	Na8.setNpl(0);
+		Na1.AddLft(&Na2);
+		Na1.AddRgt(&Na3);
+		Na2.AddLft(&Na4);
+		Na2.AddRgt(&Na5);
+		Na3.AddLft(&Na6);
+		Na5.AddLft(&Na7);
+		Na6.AddLft(&Na8);
+
+		Node<A> Nb1(6);		Nb1.setNpl(2);
+		Node<A> Nb2(12);	Nb2.setNpl(1);
+		Node<A> Nb3(7);		Nb3.setNpl(1);
+		Node<A> Nb4(18);	Nb4.setNpl(0);
+		Node<A> Nb5(24);	Nb5.setNpl(0);
+		Node<A> Nb6(37);	Nb6.setNpl(0);
+		Node<A> Nb7(18);	Nb7.setNpl(0);
+		Node<A> Nb8(33);	Nb8.setNpl(0);
+		Nb1.AddLft(&Nb2);
+		Nb1.AddRgt(&Nb3);
+		Nb2.AddLft(&Nb4);
+		Nb2.AddRgt(&Nb5);
+		Nb3.AddLft(&Nb6);
+		Nb3.AddRgt(&Nb7);
+		Nb5.AddLft(&Nb8);
+
+		LHeap<A> LH1(cmp);
+		LHeap<A> LH2(cmp);
+		LH1.root = &Na1;
+		LH2.root = &Nb1;
+		//LH1.Merge(&LH2);
+		//LH1.print();
+		LHeap<A> *LH3 = LH1 + LH2;
+		LH3->print();
+		//cout << LH1.Pop() << endl;
+		//LH1.print();
+	}
+
 	system("pause");
 }

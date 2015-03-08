@@ -29,7 +29,7 @@ template<class T1, class T2 = NULLT>
 class LHeap {
 
 private :
-	Node<T1, T2> *root;
+	
 	int size;
 	int(*cmp)(const T1 &a, const T1 &b);
 
@@ -37,6 +37,7 @@ private :
 	int calcNpl(const Node<T1, T2> * const node) const;
 	Node<T1, T2>* merge(Node<T1, T2> *H1, Node<T1, T2> *H2);
 public :
+	Node<T1, T2> *root;
 	// constructors and destructor
 	LHeap();
 	LHeap(int(*compare)(const T1 &a, const T1 &b));
@@ -44,15 +45,20 @@ public :
 	LHeap(const T1 &rootID, const T2 &rootRcd, int(*compare)(const T1 &a, const T1 &b) = dCmp);
 	LHeap(const LHeap<T1, T2> &Old);
 	~LHeap();
-	bool setCmp(int(*compare)(const T1 &a, const T1 &b));
 
+	// operations
+	bool setCmp(int(*compare)(const T1 &a, const T1 &b));
 	Node<T1, T2> * Top();
 	Node<T1, T2> * Pop();
 	bool empty();
 	bool Insert(const T1 &id, const T2 * rcd = NULL);
+	bool Merge(LHeap * lhp);
 
+	// get info of the heap
 	int getSize() const { return size; }
 	bool print() const;
+
+	friend LHeap<T1, T2> * operator+(LHeap<T1, T2> &a, LHeap<T1, T2> &b);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,14 +235,16 @@ Node<T1, T2>* LHeap<T1, T2>::merge(Node<T1, T2> *H1, Node<T1, T2> *H2) {
 		return H1;
 	head = cmp(H1->getID(), H2->getID()) > 0 ? H2 : H1;
 	head->AddRgt(merge(head->getRgt(), cmp(H1->getID(), H2->getID()) > 0 ? H1 : H2));
+	head->setNpl(MIN(calcNpl(head->getLft()), calcNpl(head->getRgt())) + 1);	// reset Npl
 	if (calcNpl(head->getLft()) < calcNpl(head->getRgt())) {	// swap if left-npl is smaller than right-npl
 		Tmp = head->getRgt();
 		head->AddRgt(head->getLft());
 		head->AddLft(Tmp);
 	}
-	head->setNpl(MIN(calcNpl(head->getLft()), calcNpl(head->getRgt())) + 1);	// reset Npl
 	return head;
 }
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //        NAME: setCmp
@@ -341,6 +349,29 @@ bool LHeap<T1, T2>::Insert(const T1 &id, const T2 * rcd) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+//        NAME: Insert
+// DESCRIPTION: To merge a new-come heap with this heap.
+//   ARGUMENTS: LHeap * lhp - the new-come heap
+// USES GLOBAL: none
+// MODIFIES GL: root, size
+//     RETURNS: bool
+//      AUTHOR: Kingston Chan
+// AUTHOR/DATE: KC 2015-03-08
+//							KC 2015-03-08
+////////////////////////////////////////////////////////////////////////////////
+template<class T1, class T2>
+bool LHeap<T1, T2>::Merge(LHeap * lhp) {
+	Node<T1, T2> *tmp;
+	if (lhp == NULL)
+		return true;
+	
+	tmp = new Node<T1, T2>(*(lhp->root));
+	root = merge(root, tmp);
+	size = calcSize(root);
+	return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 //        NAME: print
 // DESCRIPTION: print a heap with inorder traversal.
 //   ARGUMENTS: none
@@ -359,6 +390,24 @@ bool LHeap<T1, T2>::print() const {
 	}
 	else
 		return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//        NAME: operator+
+// DESCRIPTION: To merge two leftist heaps.
+//   ARGUMENTS: LHeap &a, LHeap &b - the heaps that are to be merged
+// USES GLOBAL: none
+// MODIFIES GL: none
+//     RETURNS: LHeap *
+//      AUTHOR: Kingston Chan
+// AUTHOR/DATE: KC 2015-03-08
+//							KC 2015-03-08
+////////////////////////////////////////////////////////////////////////////////
+template<class T1, class T2>
+LHeap<T1, T2> * operator+(LHeap<T1, T2> &a, LHeap<T1, T2> &b) {
+	LHeap<T1, T2> *New = new LHeap<T1, T2>(a);
+	New->Merge(b);
+	return New;
 }
 
 #endif
